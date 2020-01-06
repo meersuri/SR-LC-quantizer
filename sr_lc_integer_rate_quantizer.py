@@ -238,4 +238,4 @@ class SR_LC_Int_Reconstructor:
             state = self.num_to_state[state.next[branch]]
             self.out.append(rxn)
 			
-		return self.out
+        return self.out
