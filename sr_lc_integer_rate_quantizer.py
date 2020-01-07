@@ -63,6 +63,9 @@ class SR_LC_Int_Quantizer:
         memory: The memory size of the shift register of the convolutional code
         corresponding to this quantizer
         
+        lc_ceoff: multiplier and offset coefficients of the LC recursion for 
+        label generation
+        
         distortion_measure: function of true value and reconstruction value used
         to measure the closeness of the two
         
@@ -75,7 +78,7 @@ class SR_LC_Int_Quantizer:
     """
         
         
-    def __init__(self, memory, rate, mu, s, c_scale = 1, distortion_measure = 'mse'):
+    def __init__(self, memory, rate, lc_coeff, mu, s, c_scale = 1, distortion_measure = 'mse'):
         self.rate = rate
         self.memory = memory
         self.mu = mu
@@ -89,20 +92,7 @@ class SR_LC_Int_Quantizer:
         q = [(2*label + 1)/(2*(2**memory)) for label in self.labels]
         self.y = self.c_sf * stats.norm.ppf(q, loc = mu, scale = s)
         self.num_to_state = {}
-#       multiplier and offset coefficients for LC code recursions, for various 
-#       rates and memory sizes
-        self.lc_coeff_r_1 = {2: [(5, 2), (5, 0)],
-                             3: [(5, 7), (5, 3)],
-                             4: [(5, 8), (5, 0)]}
-        
-        self.lc_coeff_r_2 = {2: [(5, 3), (5, 2), (5, 1), (5, 4)],
-                             3: [(5, 7), (5, 1), (5, 3), (5, 5)],
-                             4: [(5, 15), (5, 4), (5, 7), (5, 12)]}
-        
-        self.lc_coeff_r_3 = {3: [(5, 7), (5, 1), (5, 3), (5, 5), (5, 2), (5, 6), (5, 0), (5, 4)],
-                             4: [(5, 15), (5, 6), (5, 11), (5, 4), (5, 7), (5, 9), (5, 3), (5, 12)]}
-        
-        self.lc_coeff = {1: self.lc_coeff_r_1, 2: self.lc_coeff_r_2, 3:self.lc_coeff_r_3}
+        self.lc_coeff = lc_coeff
         
 #       init all states except for zero state with infinite path metric as starting 
 #       state of shift register is all zeros
@@ -193,7 +183,7 @@ class SR_LC_Int_Reconstructor:
         Reconstruction is a forward pass through the trellis, storing the
         recontruction values corresponding to the picked branch at each timestep        
     """
-    def __init__(self, memory, rate, mu, s, c_scale = 1):
+    def __init__(self, memory, rate, lc_coeff, mu, s, c_scale = 1):
         self.rate = rate
         self.memory = memory
         self.mu = mu
@@ -204,18 +194,7 @@ class SR_LC_Int_Reconstructor:
         q = [(2*label + 1)/(2*(2**memory)) for label in self.labels]
         self.y = self.c_sf * stats.norm.ppf(q, loc = mu, scale = s)
         self.num_to_state = {}
-        self.lc_coeff_r_1 = {2: [(5, 2), (5, 0)],
-                             3: [(5, 7), (5, 3)],
-                             4: [(5, 8), (5, 0)]}
-        
-        self.lc_coeff_r_2 = {2: [(5, 3), (5, 2), (5, 1), (5, 4)],
-                             3: [(5, 7), (5, 1), (5, 3), (5, 5)],
-                             4: [(5, 15), (5, 4), (5, 7), (5, 12)]}
-        
-        self.lc_coeff_r_3 = {3: [(5, 7), (5, 1), (5, 3), (5, 5), (5, 2), (5, 6), (5, 0), (5, 4)],
-                             4: [(5, 15), (5, 6), (5, 11), (5, 4), (5, 7), (5, 9), (5, 3), (5, 12)]}
-        
-        self.lc_coeff = {1: self.lc_coeff_r_1, 2: self.lc_coeff_r_2, 3:self.lc_coeff_r_3}
+        self.lc_coeff = lc_coeff
         
         for i in range(2**memory):
             if i == 0: 
