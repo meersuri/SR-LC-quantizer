@@ -205,6 +205,7 @@ class SR_LC_Int_Reconstructor:
             
     def decode(self, quant_repr, init_state = 0):
         assert len(quant_repr) > 0, 'Input sequence is empty'
+        assert np.max(quant_repr) < 2**self.rate, 'decoder rate mismatch'
         self.input = quant_repr
         self.out = []
         n = len(quant_repr)
