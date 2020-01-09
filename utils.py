@@ -6,6 +6,7 @@ Created on Thu Jan  9 21:37:47 2020
 """
 import numpy as np
 from scipy import stats
+from sr_lc_integer_rate_quantizer import* 
 
 def toSpherical(X):
     """ 
@@ -106,7 +107,7 @@ def compress(x, rate, memory, lc_coeff, c_scale):
     for i in range(d):
         x_col = x[:, i]
         mu, s = stats.norm.fit(x_col)
-        quant = SR_LC_Int_Quantizer(memory[i], rate[i], lc_coeff, mu, s, c_scale)
+        quant = SR_LC_Int_Quantizer(memory[i], rate[i], lc_coeff, mu, s, c_scale[rate[i]][memory[i]])
         encoded = np.array(quant.encode(x_col))
         mse.append(quant.distortion)
         sqnr.append(quant.sqnr)
@@ -123,7 +124,7 @@ def decompress(x_comp, rate, memory, lc_coeff, mu, s, c_scale):
     x_rxn = np.zeros((n, d), dtype=np.float64)
     for i in range(d):
         x_col = x_comp[:, i]
-        decoder = SR_LC_Int_Reconstructor(memory[i], rate[i], lc_coeff, mu[i], s[i], c_scale)
+        decoder = SR_LC_Int_Reconstructor(memory[i], rate[i], lc_coeff, mu[i], s[i], c_scale[rate[i]][memory[i]])
         rxn = np.array(decoder.decode(x_col))
         x_rxn[:, i] = rxn.T
     
