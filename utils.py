@@ -184,3 +184,37 @@ def preProcess(vectors, sample_size = 0.01, center = True, unit_norm = False, pc
         x = toSpherical(x)
 
     return x
+
+def getLCCoeff():
+    """
+    Label generating LC coefficients for various rates and memory sizes
+    """
+    
+    lc_coeff_r_1 = {2: [(5, 2), (5, 0)],
+                    3: [(5, 7), (5, 3)],
+                    4: [(5, 4), (5, 12)]}
+
+    lc_coeff_r_2 = {2: [(5, i) for i in range(4)],
+                    3: [(5, 2*i) for i in range(8)],
+                    4: [(5, 4*i) for i in range(16)]}
+    
+    lc_coeff_r_3 = {3: [(5, i) for i in range(8)],
+                    4: [(5, 2*i) for i in range(16)]}
+    
+    lc_coeff_r_4 = {4: [(5, i) for i in range(16)],
+                    5: [(5, 2*i) for i in range(32)]}
+    
+    lc_coeff_r_5 = {5: [(5, i) for i in range(32)],
+                    6: [(5, 2*i) for i in range(64)]}
+    
+    lc_coeff_r_6 = {6: [(5, i) for i in range(64)],
+                    7: [(5, 2*i) for i in range(128)]}
+    
+    lc_coeff_r_7 = {7: [(5, i) for i in range(128)],
+                    8: [(5, 2*i) for i in range(256)]}
+    
+    lc_coeff = {1: lc_coeff_r_1, 2: lc_coeff_r_2, 3: lc_coeff_r_3,
+                4: lc_coeff_r_4, 5: lc_coeff_r_5, 6: lc_coeff_r_6,
+                7: lc_coeff_r_7}
+    
+    return lc_coeff
