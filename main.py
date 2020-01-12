@@ -120,15 +120,14 @@ s = np.array(phase_fit_hist)[:, 1]
 x_rxn = decompress(x_comp, rate, memory, lc_coeff, mu, s, c_scale)
 
 rxn_error = np.abs((x[:, 1:] - x_rxn)/x[:, 1:])
-#hist, be = np.histogram(rxn_error[:, 1], bins = num_bins, density = True)
-#plt.figure()
-#plt.plot(be[:-1], hist, label = 'Data')
 
-distCosSim(x[:, 1:], x_rxn, 200, 200)
+# check average and max distortion in cosine similarity for a random sample
+abs_error = distCosSim(x[:, 1:], x_rxn, 5000)
 
+# visualize quantization and reconstruction
 plt.figure()
-plt.plot(x[:200, 111])
-plt.plot(x_rxn[:200, 110])
+plt.plot(x[:200, 1])
+plt.plot(x_rxn[:200, 0])
     
 
 

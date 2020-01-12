@@ -130,29 +130,29 @@ def decompress(x_comp, rate, memory, lc_coeff, mu, s, c_scale):
     
     return x_rxn
 
-def distCosSim(x, x_rxn, n1 = 100, n2 = 100):
+def distCosSim(x, x_rxn, n_test = 1000):
     """
     Randomly sample vectors and calculate the distortion in all-pairs cosine 
     similarity after quantization and reconstruction
     """
     n = x.shape[0]
-    true_dist = np.zeros((n1, n2))
-    l = np.random.choice(n, n1, replace = False)
-    m = np.random.choice(n, n2, replace = False)
-    for i in range(n1):
-        for j in range(n2):
-            true_dist[i, j] = np.dot(x[l[i], :], x[m[j],:])/(np.linalg.norm(x[l[i], :])*np.linalg.norm(x[m[j], :]))
-            
-    rec_dist = np.zeros((n1, n2))
-    for i in range(n1):
-        for j in range(n2):
-            rec_dist[i, j] = np.dot(x_rxn[l[i], :], x_rxn[m[j], :])/(np.linalg.norm(x_rxn[l[i], :])*np.linalg.norm(x_rxn[m[j], :]))
+    idx_1 = np.random.choice(n, n_test)
+    idx_2 = np.random.choice(n, n_test)
+    norm_x1 = np.sqrt(np.diag(np.matmul(x[idx_1, :], x[idx_1, :].T)))
+    norm_x2 = np.sqrt(np.diag(np.matmul(x[idx_2, :], x[idx_2, :].T)))
+    A = x[idx_1, :]/norm_x1[:, None]
+    B = x[idx_2, :]/norm_x2[:, None]
+    cos_sim = np.matmul(A, B.T)
+    norm_x1_rxn = np.sqrt(np.diag(np.matmul(x_rxn[idx_1, :], x_rxn[idx_1, :].T)))
+    norm_x2_rxn = np.sqrt(np.diag(np.matmul(x_rxn[idx_2, :], x_rxn[idx_2, :].T)))
+    A_rxn = x_rxn[idx_1, :]/norm_x1_rxn[:, None]
+    B_rxn = x_rxn[idx_2, :]/norm_x2_rxn[:, None]
+    cos_sim_rxn = np.matmul(A_rxn, B_rxn.T)
+    abs_error = np.abs(cos_sim - cos_sim_rxn)
+    print("Avg absolute error = {:.4}".format(np.mean(abs_error)))
+    print("Max absolute error = {:.4}".format(np.max(abs_error)))
     
-    rel_error = np.abs((true_dist - rec_dist)/true_dist)
-    max_rel_error = np.max(rel_error)
-    avg_rel_error = np.mean(rel_error)
-    print("Avg rel error = {:.4}".format(avg_rel_error))
-    print("Max rel error = {:.4}".format(max_rel_error))
+    return abs_error
     
 def preProcess(vectors, sample_size = 0.01, center = True, unit_norm = False, pca = True, toAngle = False):
     """
