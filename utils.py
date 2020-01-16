@@ -10,16 +10,18 @@ from sr_lc_integer_rate_quantizer import*
 
 def toSpherical(X):
     """ 
-    Convert vector to spherical coordinates where first dimension is the
-    norm and the remaining d-1 dimensions constitue the phase
+    Convert vector to spherical coordinates where each dimension is divided 
+    by the norm
     """
     d = X.shape[1]
-    X1 = np.zeros_like(X)
-    X1[:,0] = np.sqrt(np.sum(X**2, axis = 1))
-    for i in range(1, d):
-#        X1[:, i] = np.arccos(X[:, i-1]/np.sqrt(np.sum(X[:, i-1: ]**2, axis = 1)))
-        X1[:, i] = X[:, i]/X1[:, 0]
-    return X1
+    X1 = np.copy(X)
+    norm = np.sqrt(np.sum(X**2, axis = 1))
+    X1 = X1/norm[:, None]
+    return X1, norm
+
+def toRect(X, norm):
+
+    return X*norm[:, None]
 
 def optScale(memory, rate, lc_coeff, mu, s, c_lb = 0.5, c_ub = 1.5, n_points = 50):
     """
@@ -105,6 +107,7 @@ def compress(x, rate, memory, lc_coeff, c_scale):
     mse = []
     sqnr = []
     for i in range(d):
+        print("Compressing dimension = {}, bpi = {}".format(i, rate[i]))
         x_col = x[:, i]
         mu, s = stats.norm.fit(x_col)
         quant = SR_LC_Int_Quantizer(memory[i], rate[i], lc_coeff, mu, s, c_scale[rate[i]][memory[i]])
@@ -154,36 +157,51 @@ def distCosSim(x, x_rxn, n_test = 1000):
     
     return abs_error
     
-def preProcess(vectors, sample_size = 0.01, center = True, unit_norm = False, pca = True, toAngle = False):
+def preProcess(vectors, center = True, unit_norm = False, pca = True, toAngle = False):
     """
     Preprocessing pipeline
     """
     n, d = vectors.shape
-    subset = int(n*sample_size)
-    vec_idx = np.random.choice(range(n), subset, replace = False)
+    
+    mean_vector = np.mean(vectors, axis = 0)
     
     if center:
-        mean_vector = np.mean(vectors, axis = 0)
-        x = (vectors - mean_vector)[vec_idx]
+        x = vectors - mean_vector
     else:
-        x = vectors[vec_idx]
-        
+        x = vectors
+    
+    norm = np.linalg.norm(x, axis = 1)
+    
     if unit_norm:
-        norm = np.linalg.norm(x, axis = 1)
         x = x/norm[:, None]
-        
+    
+    x_cov = np.cov(x, rowvar = False)
+    ev, eig = np.linalg.eig(x_cov)
+    idx = np.argsort(ev)[::-1]
+    ev = np.sort(ev)[::-1]
+    eig = eig[:, idx]
+    
     if pca:
-        x_cov = np.cov(x, rowvar = False)
-        ev, eig = np.linalg.eig(x_cov)
-        idx = np.argsort(ev)[::-1]
-        ev = np.sort(ev)[::-1]
-        eig = eig[:, idx]
         x = np.matmul(x, eig)
 
     if toAngle:
-        x = toSpherical(x)
+        x, mag = toSpherical(x)
 
+    return x, mean_vector, norm, eig, mag
+
+
+def postProcess(x, mean_vector, norm, eig, mag):
+    
+    x = toRect(x, mag)
+    x = np.matmul(x, eig.T)
+    x = x*norm[:, None]
+    x = x + mean_vector
+    
     return x
+
+
+    
+    
 
 def getLCCoeff():
     """

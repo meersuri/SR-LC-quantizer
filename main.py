@@ -23,9 +23,18 @@ wv = api.load('word2vec-google-news-300')
 
 w = gs.models.KeyedVectors.load_word2vec_format('./GoogleNews-vectors-negative300.bin', binary=True)
 
-vectors = w.vectors
+with open('./vec_idx.txt') as fp:
+    lines = fp.readlines()
 
-x = preProcess(vectors, center = True, unit_norm = True, pca = True, toAngle = True)
+idx = []
+for line in lines:
+    vals = line.split(',')
+    idx.append(int(vals[0]))
+    idx.append(int(vals[1]))
+    
+vectors = w.vectors[idx]
+
+x, mean_vector, norm, eig, mag = preProcess(vectors, center = True, unit_norm = True, pca = True, toAngle = True)
 
 n, d = x.shape
 num_bins = 100
@@ -105,14 +114,16 @@ plt.tight_layout()
 ##plt.savefig('rate_allocation.jpg', dpi = 300, bbox_inches = 'tight')
    
 lc_coeff = getLCCoeff()
-c_scale = np.load("./c_scale").item()
+c_scale = np.load("./c_scale.npy").item()
 
 
 n, d = x.shape
-rate = np.array(min_dist_rates[1611], dtype = np.int)
+total_rate = 716
+rate = np.array(min_dist_rates[716], dtype = np.int)
 memory = [list(c_scale[r].keys())[-1] for r in rate]
 
 x_comp, sqnr = compress(x[:, 1:], rate, memory, lc_coeff, c_scale)
+np.savez("vec_comp_{}.npz".format(total_rate), x_comp)
 
 mu = np.array(phase_fit_hist)[:, 0]
 s = np.array(phase_fit_hist)[:, 1]
@@ -121,13 +132,34 @@ x_rxn = decompress(x_comp, rate, memory, lc_coeff, mu, s, c_scale)
 
 rxn_error = np.abs((x[:, 1:] - x_rxn)/x[:, 1:])
 
+vectors_h = postProcess(x_rxn, mean_vector, norm, eig, mag)
+
+true_sim = []
+rxn_sim = []
+for i in range(0, n, 2):
+    v1 = vectors[i]
+    v2 = vectors[i+1]
+    cos_sim = np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))
+    true_sim.append(cos_sim)
+    vh1 = vectors_h[i]
+    vh2 = vectors_h[i+1]
+    cos_sim_h = np.dot(vh1, vh2)/(np.linalg.norm(vh1)*np.linalg.norm(vh2))
+    rxn_sim.append(cos_sim_h)
+
+avg_error = np.mean(np.abs(true_sim - rxn_sim))
+max_error = np.max(np.abs(true_sim - rxn_sim))
+print("Avg absolute error = {:.4}".format(avg_error))
+print("Max absolute error = {:.4}".format(max_error))
+
+
+
 # check average and max distortion in cosine similarity for a random sample
-abs_error = distCosSim(x[:, 1:], x_rxn, 5000)
+#abs_error = distCosSim(x[:, 1:], x_rxn, 5000)
 
 # visualize quantization and reconstruction
-plt.figure()
-plt.plot(x[:200, 1])
-plt.plot(x_rxn[:200, 0])
+#plt.figure()
+#plt.plot(x[:200, 1])
+#plt.plot(x_rxn[:200, 0])
     
 
 
