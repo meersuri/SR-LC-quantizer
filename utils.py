@@ -208,6 +208,10 @@ def getLCCoeff():
     Label generating LC coefficients for various rates and memory sizes
     """
     
+    lc_coeff_r_0 = {2: [(5, 0)],
+                    3: [(5, 0)],
+                    4: [(5, 0)]}
+
     lc_coeff_r_1 = {2: [(5, 2), (5, 0)],
                     3: [(5, 7), (5, 3)],
                     4: [(5, 4), (5, 12)]}
@@ -231,7 +235,7 @@ def getLCCoeff():
     lc_coeff_r_7 = {7: [(5, i) for i in range(128)],
                     8: [(5, 2*i) for i in range(256)]}
     
-    lc_coeff = {1: lc_coeff_r_1, 2: lc_coeff_r_2, 3: lc_coeff_r_3,
+    lc_coeff = {0: lc_coeff_r_0, 1: lc_coeff_r_1, 2: lc_coeff_r_2, 3: lc_coeff_r_3,
                 4: lc_coeff_r_4, 5: lc_coeff_r_5, 6: lc_coeff_r_6,
                 7: lc_coeff_r_7}
     
