@@ -128,23 +128,28 @@ c_scale = np.load("./c_scale.npy", allow_pickle = True).item()
 
 bits = options.total_bits
 n, d = x.shape
-rate_idx = np.searchsorted(total_rates, bits) 
+rate_idx = total_rates[np.searchsorted(total_rates, bits)] 
 total_rate = min_dist_rates[rate_idx]
-print("vectors = {}, dimensions = {}, total bits = {}".format(n, d, total_rates[rate_idx])) 
+print("vectors = {}, dimensions = {}, total bits = {}".format(n, d, rate_idx)) 
 rate = np.array(min_dist_rates[rate_idx], dtype = np.int)
 memory = [list(c_scale[r].keys())[-1] for r in rate]
 
 x_comp, sqnr = compress(x, rate, memory, lc_coeff, c_scale)
-np.savez("vec_comp_{}.npz".format(total_rates[rate_idx]), x_comp)
+np.savez("vec_comp_{}.npz".format(rate_idx), x_comp)
+np.savez("vec_mean_{}.npz".format(rate_idx), mean_vector)
+np.savez("vec_norm_{}.npz".format(rate_idx), norm)
+np.savez("eig_matrix_{}.npz".format(rate_idx), eig)
+np.savez("vec_mag_{}.npz".format(rate_idx), mag)
 
 mu = np.array(phase_fit_hist)[:, 0]
 s = np.array(phase_fit_hist)[:, 1]
 
 x_rxn = decompress(x_comp, rate, memory, lc_coeff, mu, s, c_scale)
 
-rxn_error = np.abs((x - x_rxn)/x)
+quant_error = np.abs((x - x_rxn)/x)
 
 vectors_h = postProcess(x_rxn, mean_vector, norm, eig, mag)
+
 
 true_sim = []
 rxn_sim = []
@@ -158,6 +163,9 @@ for i in range(0, n, 2):
     cos_sim_h = np.dot(vh1, vh2)/(np.linalg.norm(vh1)*np.linalg.norm(vh2))
     rxn_sim.append(cos_sim_h)
 
+true_sim = np.array(true_sim)
+rxn_sim = np.array(rxn_sim)
+
 avg_error = np.mean(np.abs(true_sim - rxn_sim))
 max_error = np.max(np.abs(true_sim - rxn_sim))
 print("Avg absolute error = {:.4}".format(avg_error))
@@ -166,11 +174,11 @@ print("Max absolute error = {:.4}".format(max_error))
 
 
 # check average and max distortion in cosine similarity for a random sample
-#abs_error = distCosSim(x[:, 1:], x_rxn, 5000)
+#abs_error = distCosSim(x, x_rxn, 5000)
 
 # visualize quantization and reconstruction
 #plt.figure()
-#plt.plot(x[:200, 1])
+#plt.plot(x[:200, 0])
 #plt.plot(x_rxn[:200, 0])
     
 
